@@ -13,21 +13,19 @@ nav button {background:none; border:none; color:white; padding:15px 20px; cursor
 nav button:hover {background:#0d3c1a;}
 section {display:none; padding:20px;}
 section.active {display:block;}
-/* Kolory sekcji */
 #konfigurator {background:#2e7d32; color:white;}
 #serwis {background:#0d47a1; color:white;}
 #kontakt {background:#607d8b; color:white;}
-/* Formularze */
 form {max-width:600px; margin:auto;}
 label {display:block; margin:10px 0 5px;}
 input, select, textarea, button {width:100%; padding:8px; margin-bottom:10px; border-radius:4px; border:none;}
 button {background:#1b5e20; color:white; cursor:pointer; font-size:16px;}
 button:hover {background:#145a32;}
-/* Cennik */
 table {width:100%; border-collapse: collapse; margin-top:20px;}
 th, td {border:1px solid #fff; padding:5px;}
 th {background:#145a32; color:white;}
 tfoot td {background:#145a32; color:white; font-weight:bold;}
+.subsection {margin-bottom:15px; padding:10px; border:1px solid #fff; border-radius:5px;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2.6.4/dist/email.min.js"></script>
 <script>
@@ -45,16 +43,19 @@ const prices = {
   chlodzenie:{'SilentiumPC':120,'Noctua':200},
   obudowa:{'SilentiumPC':250,'NZXT':400},
   zasilacz:{'Corsair 550W':300,'Corsair 750W':450},
-  ram:{'8GB DDR4':150,'16GB DDR4':250},
-  hdd:{'1TB HDD':180,'2TB HDD':300},
-  ssd:{'500GB SSD':250,'1TB SSD':400},
+  ram2:{'2GB':50,'4GB':100,'8GB':150,'16GB':250,'32GB':450},
+  ram3:{'2GB':60,'4GB':110,'8GB':160,'16GB':260,'32GB':460},
+  ram4:{'2GB':70,'4GB':120,'8GB':170,'16GB':270,'32GB':470},
   wentylatory:{'Wentylator RGB':60,'Wentylator zwykły':40}
 };
+const pricePerGB = {hdd:0.2, ssd:0.5}; // cena za 1GB
 
 function calculateTotal(){
   let total=0;
   const tbody=document.getElementById('priceBody');
   tbody.innerHTML='';
+  
+  // Jednokrotne wybory
   ['cpu','gpu','plyta','chlodzenie','obudowa','zasilacz'].forEach(cat=>{
     let val=document.getElementById(cat).value;
     if(val){
@@ -62,15 +63,42 @@ function calculateTotal(){
       tbody.innerHTML+=`<tr><td>${cat.toUpperCase()}</td><td>${val}</td><td>${prices[cat][val]}</td></tr>`;
     }
   });
-  ['ram','hdd','ssd','wentylatory'].forEach(cat=>{
+
+  // RAM
+  ['ram2','ram3','ram4'].forEach(cat=>{
     let checkboxes=document.querySelectorAll(`input[name="${cat}"]:checked`);
     checkboxes.forEach(cb=>{
       total+=prices[cat][cb.value];
-      tbody.innerHTML+=`<tr><td>${cat.toUpperCase()}</td><td>${cb.value}</td><td>${prices[cat][cb.value]}</td></tr>`;
+      tbody.innerHTML+=`<tr><td>RAM ${cat.slice(3)}</td><td>${cb.value}</td><td>${prices[cat][cb.value]}</td></tr>`;
     });
   });
-  document.getElementById('totalPrice').innerText=total+' zł';
-  // aktualizacja podsumowania do EmailJS
+
+  // Wentylatory
+  let fanboxes=document.querySelectorAll('input[name="wentylatory"]:checked');
+  fanboxes.forEach(cb=>{
+    total+=prices['wentylatory'][cb.value];
+    tbody.innerHTML+=`<tr><td>Wentylator</td><td>${cb.value}</td><td>${prices['wentylatory'][cb.value]}</td></tr>`;
+  });
+
+  // HDD
+  const hddGB=parseInt(document.getElementById('hddGB').value)||0;
+  if(hddGB>0){
+    let val=hddGB*pricePerGB.hdd;
+    total+=val;
+    tbody.innerHTML+=`<tr><td>HDD</td><td>${hddGB} GB</td><td>${val.toFixed(2)}</td></tr>`;
+  }
+
+  // SSD
+  const ssdGB=parseInt(document.getElementById('ssdGB').value)||0;
+  if(ssdGB>0){
+    let val=ssdGB*pricePerGB.ssd;
+    total+=val;
+    tbody.innerHTML+=`<tr><td>SSD</td><td>${ssdGB} GB</td><td>${val.toFixed(2)}</td></tr>`;
+  }
+
+  document.getElementById('totalPrice').innerText=total.toFixed(2)+' zł';
+
+  // Podsumowanie dla EmailJS
   let summary='';
   Array.from(tbody.rows).forEach(r=>{
     summary+=`${r.cells[0].innerText}: ${r.cells[1].innerText} - ${r.cells[2].innerText}\n`;
@@ -122,66 +150,93 @@ function sendService(e){
 <section id="konfigurator" class="active">
 <h2>Twój konfigurator PC</h2>
 <form id="konfiguratorForm" oninput="calculateTotal()">
+<!-- CPU, GPU, Płyta, Chłodzenie, Obudowa, Zasilacz -->
 <label>CPU</label>
 <select id="cpu">
-  <option value="">--Wybierz CPU--</option>
-  <option>Intel i5</option>
-  <option>Intel i7</option>
-  <option>AMD Ryzen 5</option>
-  <option>AMD Ryzen 7</option>
+<option value="">--Wybierz CPU--</option>
+<option>Intel i5 (500 zł)</option>
+<option>Intel i7 (800 zł)</option>
+<option>AMD Ryzen 5 (600 zł)</option>
+<option>AMD Ryzen 7 (900 zł)</option>
 </select>
 
 <label>GPU</label>
 <select id="gpu">
-  <option value="">--Wybierz GPU--</option>
-  <option>GTX 1660</option>
-  <option>RTX 3060</option>
-  <option>RTX 3070</option>
+<option value="">--Wybierz GPU--</option>
+<option>GTX 1660 (700 zł)</option>
+<option>RTX 3060 (1500 zł)</option>
+<option>RTX 3070 (2500 zł)</option>
 </select>
 
 <label>Płyta główna</label>
 <select id="plyta">
-  <option value="">--Wybierz płytę--</option>
-  <option>MSI B550</option>
-  <option>ASUS B550</option>
+<option value="">--Wybierz płytę--</option>
+<option>MSI B550 (400 zł)</option>
+<option>ASUS B550 (450 zł)</option>
 </select>
 
 <label>Chłodzenie CPU</label>
 <select id="chlodzenie">
-  <option value="">--Wybierz chłodzenie--</option>
-  <option>SilentiumPC</option>
-  <option>Noctua</option>
+<option value="">--Wybierz chłodzenie--</option>
+<option>SilentiumPC (120 zł)</option>
+<option>Noctua (200 zł)</option>
 </select>
 
 <label>Obudowa</label>
 <select id="obudowa">
-  <option value="">--Wybierz obudowę--</option>
-  <option>SilentiumPC</option>
-  <option>NZXT</option>
+<option value="">--Wybierz obudowę--</option>
+<option>SilentiumPC (250 zł)</option>
+<option>NZXT (400 zł)</option>
 </select>
 
 <label>Zasilacz</label>
 <select id="zasilacz">
-  <option value="">--Wybierz zasilacz--</option>
-  <option>Corsair 550W</option>
-  <option>Corsair 750W</option>
+<option value="">--Wybierz zasilacz--</option>
+<option>Corsair 550W (300 zł)</option>
+<option>Corsair 750W (450 zł)</option>
 </select>
 
-<label>RAM (możesz wybrać kilka)</label>
-<input type="checkbox" name="ram" value="8GB DDR4">8GB DDR4
-<input type="checkbox" name="ram" value="16GB DDR4">16GB DDR4
+<!-- RAM DDR2, DDR3, DDR4 -->
+<div class="subsection">
+<h3>RAM DDR2</h3>
+<input type="checkbox" name="ram2" value="2GB">2GB (50 zł)
+<input type="checkbox" name="ram2" value="4GB">4GB (100 zł)
+<input type="checkbox" name="ram2" value="8GB">8GB (150 zł)
+<input type="checkbox" name="ram2" value="16GB">16GB (250 zł)
+<input type="checkbox" name="ram2" value="32GB">32GB (450 zł)
+</div>
 
-<label>HDD (możesz wybrać kilka)</label>
-<input type="checkbox" name="hdd" value="1TB HDD">1TB HDD
-<input type="checkbox" name="hdd" value="2TB HDD">2TB HDD
+<div class="subsection">
+<h3>RAM DDR3</h3>
+<input type="checkbox" name="ram3" value="2GB">2GB (60 zł)
+<input type="checkbox" name="ram3" value="4GB">4GB (110 zł)
+<input type="checkbox" name="ram3" value="8GB">8GB (160 zł)
+<input type="checkbox" name="ram3" value="16GB">16GB (260 zł)
+<input type="checkbox" name="ram3" value="32GB">32GB (460 zł)
+</div>
 
-<label>SSD (możesz wybrać kilka)</label>
-<input type="checkbox" name="ssd" value="500GB SSD">500GB SSD
-<input type="checkbox" name="ssd" value="1TB SSD">1TB SSD
+<div class="subsection">
+<h3>RAM DDR4</h3>
+<input type="checkbox" name="ram4" value="2GB">2GB (70 zł)
+<input type="checkbox" name="ram4" value="4GB">4GB (120 zł)
+<input type="checkbox" name="ram4" value="8GB">8GB (170 zł)
+<input type="checkbox" name="ram4" value="16GB">16GB (270 zł)
+<input type="checkbox" name="ram4" value="32GB">32GB (470 zł)
+</div>
 
-<label>Wentylatory (możesz wybrać kilka)</label>
-<input type="checkbox" name="wentylatory" value="Wentylator RGB">Wentylator RGB
-<input type="checkbox" name="wentylatory" value="Wentylator zwykły">Wentylator zwykły
+<!-- Wentylatory -->
+<div class="subsection">
+<h3>Wentylatory</h3>
+<input type="checkbox" name="wentylatory" value="Wentylator RGB">Wentylator RGB (60 zł)
+<input type="checkbox" name="wentylatory" value="Wentylator zwykły">Wentylator zwykły (40 zł)
+</div>
+
+<!-- HDD i SSD -->
+<label>HDD (ilość GB)</label>
+<input type="number" id="hddGB" min="0" placeholder="np. 1000">
+
+<label>SSD (ilość GB)</label>
+<input type="number" id="ssdGB" min="0" placeholder="np. 500">
 
 <label>Dodatkowe informacje</label>
 <textarea id="dodatkowe" placeholder="Np. paczkomat, uwagi..."></textarea>
@@ -195,7 +250,6 @@ function sendService(e){
 <label>Telefon</label>
 <input type="tel" id="telefon" required>
 
-<!-- Pole ukryte dla podsumowania cennika -->
 <input type="hidden" id="summary">
 
 <button onclick="sendOrder(event)">Zamów</button>
