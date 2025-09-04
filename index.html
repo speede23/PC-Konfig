@@ -2,248 +2,243 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PC Konfig</title>
 <style>
-body {margin:0; font-family: Arial, sans-serif; background-color:#f0f0f0;}
-header {background-color:#013220; color:#fff; padding:20px; text-align:center;}
-header h1 {margin:0;} header p {font-style:italic; margin:5px 0 0 0;}
-nav {display:flex; justify-content:center; background-color:#026440;}
-nav a {color:#fff; padding:15px 25px; text-decoration:none;}
-nav a:hover {background-color:#028f5f;}
-section {padding:20px; display:none;}
+body { font-family: Arial, sans-serif; margin:0; padding:0;}
+header {background:#1b5e20; color:white; padding:15px; text-align:center;}
+header h1 {margin:0;}
+nav {display:flex; justify-content:center; background:#145a32;}
+nav button {background:none; border:none; color:white; padding:15px 20px; cursor:pointer; font-size:16px;}
+nav button:hover {background:#0d3c1a;}
+section {display:none; padding:20px;}
 section.active {display:block;}
-h2 {color:#013220;}
-label {display:block; margin-top:10px;}
-select, input[type="number"], input[type="text"], input[type="email"], textarea {width:300px; padding:5px; margin-top:5px;}
-button {margin-top:15px; padding:10px 20px; background-color:#026440; color:#fff; border:none; cursor:pointer;}
-button:hover {background-color:#028f5f;}
-.summary {margin-top:20px; padding:10px; background-color:#e0f2e9; max-width:600px;}
+/* Kolory sekcji */
+#konfigurator {background:#2e7d32; color:white;}
+#serwis {background:#0d47a1; color:white;}
+#kontakt {background:#607d8b; color:white;}
+/* Formularze */
+form {max-width:600px; margin:auto;}
+label {display:block; margin:10px 0 5px;}
+input, select, textarea, button {width:100%; padding:8px; margin-bottom:10px; border-radius:4px; border:none;}
+button {background:#1b5e20; color:white; cursor:pointer; font-size:16px;}
+button:hover {background:#145a32;}
+/* Cennik */
+table {width:100%; border-collapse: collapse; margin-top:20px;}
+th, td {border:1px solid #fff; padding:5px;}
+th {background:#145a32; color:white;}
+tfoot td {background:#145a32; color:white; font-weight:bold;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@2.6.4/dist/email.min.js"></script>
+<script>
+emailjs.init("YOUR_PUBLIC_KEY"); // wstaw swój klucz publiczny EmailJS
+
+function showSection(id){
+  document.querySelectorAll('section').forEach(sec=>sec.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+const prices = {
+  cpu:{'Intel i5':500,'Intel i7':800,'AMD Ryzen 5':600,'AMD Ryzen 7':900},
+  gpu:{'GTX 1660':700,'RTX 3060':1500,'RTX 3070':2500},
+  plyta:{'MSI B550':400,'ASUS B550':450},
+  chlodzenie:{'SilentiumPC':120,'Noctua':200},
+  obudowa:{'SilentiumPC':250,'NZXT':400},
+  zasilacz:{'Corsair 550W':300,'Corsair 750W':450},
+  ram:{'8GB DDR4':150,'16GB DDR4':250},
+  hdd:{'1TB HDD':180,'2TB HDD':300},
+  ssd:{'500GB SSD':250,'1TB SSD':400},
+  wentylatory:{'Wentylator RGB':60,'Wentylator zwykły':40}
+};
+
+function calculateTotal(){
+  let total=0;
+  const tbody=document.getElementById('priceBody');
+  tbody.innerHTML='';
+  ['cpu','gpu','plyta','chlodzenie','obudowa','zasilacz'].forEach(cat=>{
+    let val=document.getElementById(cat).value;
+    if(val){
+      total+=prices[cat][val];
+      tbody.innerHTML+=`<tr><td>${cat.toUpperCase()}</td><td>${val}</td><td>${prices[cat][val]}</td></tr>`;
+    }
+  });
+  ['ram','hdd','ssd','wentylatory'].forEach(cat=>{
+    let checkboxes=document.querySelectorAll(`input[name="${cat}"]:checked`);
+    checkboxes.forEach(cb=>{
+      total+=prices[cat][cb.value];
+      tbody.innerHTML+=`<tr><td>${cat.toUpperCase()}</td><td>${cb.value}</td><td>${prices[cat][cb.value]}</td></tr>`;
+    });
+  });
+  document.getElementById('totalPrice').innerText=total+' zł';
+  // aktualizacja podsumowania do EmailJS
+  let summary='';
+  Array.from(tbody.rows).forEach(r=>{
+    summary+=`${r.cells[0].innerText}: ${r.cells[1].innerText} - ${r.cells[2].innerText}\n`;
+  });
+  document.getElementById('summary').value=summary;
+}
+
+function sendOrder(e){
+  e.preventDefault();
+  const templateParams={
+    imie: document.getElementById('imie').value,
+    email: document.getElementById('email').value,
+    telefon: document.getElementById('telefon').value,
+    summary: document.getElementById('summary').value,
+    dodatkowe: document.getElementById('dodatkowe').value
+  };
+  emailjs.send("service_j52aq3o","template_ff0tc6j",templateParams)
+    .then(()=>alert("Zamówienie wysłane!"))
+    .catch(err=>alert("Błąd: "+err));
+}
+
+function sendService(e){
+  e.preventDefault();
+  const templateParams={
+    imie: document.getElementById('serwisImie').value,
+    email: document.getElementById('serwisEmail').value,
+    telefon: document.getElementById('serwisTelefon').value,
+    problem: document.getElementById('problem').value
+  };
+  emailjs.send("service_j52aq3o","template_0fssvdn",templateParams)
+    .then(()=>alert("Zgłoszenie wysłane!"))
+    .catch(err=>alert("Błąd: "+err));
+}
+</script>
 </head>
-<body>
+<body onload="showSection('konfigurator')">
 
 <header>
 <h1>PC Konfig</h1>
-<p>Twój komputer, Twój wybór!</p>
+<p>"Twój komputer, Twoje zasady"</p>
 </header>
 
 <nav>
-    <a href="#" onclick="showSection('konfigurator')">Konfigurator</a>
-    <a href="#" onclick="showSection('kontakt')">Kontakt</a>
-    <a href="#" onclick="showSection('serwis')">Serwis</a>
+<button onclick="showSection('konfigurator')">Konfigurator</button>
+<button onclick="showSection('serwis')">Serwis</button>
+<button onclick="showSection('kontakt')">Kontakt</button>
 </nav>
 
-<section id="konfigurator" class="active" style="background-color:#013220; color:#fff;">
-<h2>Konfigurator PC</h2>
-
-<!-- CPU -->
-<label>CPU:
+<section id="konfigurator" class="active">
+<h2>Twój konfigurator PC</h2>
+<form id="konfiguratorForm" oninput="calculateTotal()">
+<label>CPU</label>
 <select id="cpu">
-<option value="Intel i5" data-price="800">Intel i5 - 800 zł</option>
-<option value="Intel i7" data-price="1200">Intel i7 - 1200 zł</option>
-<option value="AMD Ryzen 5" data-price="900">AMD Ryzen 5 - 900 zł</option>
-<option value="AMD Ryzen 7" data-price="1300">AMD Ryzen 7 - 1300 zł</option>
+  <option value="">--Wybierz CPU--</option>
+  <option>Intel i5</option>
+  <option>Intel i7</option>
+  <option>AMD Ryzen 5</option>
+  <option>AMD Ryzen 7</option>
 </select>
-</label>
 
-<!-- GPU -->
-<label>GPU:
+<label>GPU</label>
 <select id="gpu">
-<option value="RTX 3060" data-price="1500">RTX 3060 - 1500 zł</option>
-<option value="RTX 4070" data-price="3000">RTX 4070 - 3000 zł</option>
-<option value="RX 6700" data-price="1400">RX 6700 - 1400 zł</option>
-<option value="RX 6800" data-price="2800">RX 6800 - 2800 zł</option>
+  <option value="">--Wybierz GPU--</option>
+  <option>GTX 1660</option>
+  <option>RTX 3060</option>
+  <option>RTX 3070</option>
 </select>
-</label>
 
-<!-- Płyta główna -->
-<label>Płyta główna:
-<select id="mb">
-<option value="ASUS" data-price="600">ASUS - 600 zł</option>
-<option value="MSI" data-price="550">MSI - 550 zł</option>
-<option value="Gigabyte" data-price="580">Gigabyte - 580 zł</option>
+<label>Płyta główna</label>
+<select id="plyta">
+  <option value="">--Wybierz płytę--</option>
+  <option>MSI B550</option>
+  <option>ASUS B550</option>
 </select>
-</label>
 
-<!-- Zasilacz -->
-<label>Zasilacz:
-<select id="psu">
-<option value="500W" data-price="300">500W - 300 zł</option>
-<option value="650W" data-price="400">650W - 400 zł</option>
-<option value="750W" data-price="500">750W - 500 zł</option>
+<label>Chłodzenie CPU</label>
+<select id="chlodzenie">
+  <option value="">--Wybierz chłodzenie--</option>
+  <option>SilentiumPC</option>
+  <option>Noctua</option>
 </select>
-</label>
 
-<!-- Obudowa -->
-<label>Obudowa:
-<select id="case">
-<option value="Midi Tower" data-price="250">Midi Tower - 250 zł</option>
-<option value="Full Tower" data-price="400">Full Tower - 400 zł</option>
-<option value="Mini Tower" data-price="200">Mini Tower - 200 zł</option>
+<label>Obudowa</label>
+<select id="obudowa">
+  <option value="">--Wybierz obudowę--</option>
+  <option>SilentiumPC</option>
+  <option>NZXT</option>
 </select>
-</label>
 
-<!-- Chłodzenie CPU -->
-<label>Chłodzenie CPU:
-<select id="cooling">
-<option value="Wentylator" data-price="100">Wentylator - 100 zł</option>
-<option value="AiO 240mm" data-price="300">AiO 240mm - 300 zł</option>
-<option value="AiO 360mm" data-price="500">AiO 360mm - 500 zł</option>
+<label>Zasilacz</label>
+<select id="zasilacz">
+  <option value="">--Wybierz zasilacz--</option>
+  <option>Corsair 550W</option>
+  <option>Corsair 750W</option>
 </select>
-</label>
 
-<!-- RAM -->
-<label>RAM (można wybrać kilka):
-<input type="checkbox" class="ram" data-price="200" value="8GB"> 8GB 
-<input type="number" class="ram-qty" min="1" value="1" style="width:50px;"><br>
-<input type="checkbox" class="ram" data-price="350" value="16GB"> 16GB 
-<input type="number" class="ram-qty" min="1" value="1" style="width:50px;"><br>
-<input type="checkbox" class="ram" data-price="600" value="32GB"> 32GB 
-<input type="number" class="ram-qty" min="1" value="1" style="width:50px;">
-</label>
+<label>RAM (możesz wybrać kilka)</label>
+<input type="checkbox" name="ram" value="8GB DDR4">8GB DDR4
+<input type="checkbox" name="ram" value="16GB DDR4">16GB DDR4
 
-<!-- Dyski SSD -->
-<label>Dyski SSD:
-<input type="checkbox" class="ssd" data-price="300" value="250GB"> 250GB
-<input type="number" class="ssd-qty" min="1" value="1" style="width:50px;"><br>
-<input type="checkbox" class="ssd" data-price="500" value="500GB"> 500GB
-<input type="number" class="ssd-qty" min="1" value="1" style="width:50px;"><br>
-<input type="checkbox" class="ssd" data-price="900" value="1TB"> 1TB
-<input type="number" class="ssd-qty" min="1" value="1" style="width:50px;">
-</label>
+<label>HDD (możesz wybrać kilka)</label>
+<input type="checkbox" name="hdd" value="1TB HDD">1TB HDD
+<input type="checkbox" name="hdd" value="2TB HDD">2TB HDD
 
-<!-- Dyski HDD -->
-<label>Dyski HDD:
-<input type="checkbox" class="hdd" data-price="200" value="1TB"> 1TB
-<input type="number" class="hdd-qty" min="1" value="1" style="width:50px;"><br>
-<input type="checkbox" class="hdd" data-price="350" value="2TB"> 2TB
-<input type="number" class="hdd-qty" min="1" value="1" style="width:50px;"><br>
-<input type="checkbox" class="hdd" data-price="600" value="4TB"> 4TB
-<input type="number" class="hdd-qty" min="1" value="1" style="width:50px;">
-</label>
+<label>SSD (możesz wybrać kilka)</label>
+<input type="checkbox" name="ssd" value="500GB SSD">500GB SSD
+<input type="checkbox" name="ssd" value="1TB SSD">1TB SSD
 
-<!-- Wentylatory -->
-<label>Wentylatory:
-<input type="checkbox" class="fan" data-price="50" value="120mm"> 120mm
-<input type="number" class="fan-qty" min="1" value="1" style="width:50px;">
-<input type="checkbox" class="fan-rgb" value="rgb"> RGB<br>
-<input type="checkbox" class="fan" data-price="70" value="140mm"> 140mm
-<input type="number" class="fan-qty" min="1" value="1" style="width:50px;">
-<input type="checkbox" class="fan-rgb" value="rgb"> RGB
-</label>
+<label>Wentylatory (możesz wybrać kilka)</label>
+<input type="checkbox" name="wentylatory" value="Wentylator RGB">Wentylator RGB
+<input type="checkbox" name="wentylatory" value="Wentylator zwykły">Wentylator zwykły
 
-<button onclick="calculatePrice()">Oblicz cenę</button>
-<div class="summary" id="summary">Podsumowanie ceny: 0 zł</div>
+<label>Dodatkowe informacje</label>
+<textarea id="dodatkowe" placeholder="Np. paczkomat, uwagi..."></textarea>
+
+<label>Imię i nazwisko</label>
+<input type="text" id="imie" required>
+
+<label>Email</label>
+<input type="email" id="email" required>
+
+<label>Telefon</label>
+<input type="tel" id="telefon" required>
+
+<!-- Pole ukryte dla podsumowania cennika -->
+<input type="hidden" id="summary">
+
+<button onclick="sendOrder(event)">Zamów</button>
+</form>
+
+<h3>Twój cennik</h3>
+<table id="priceTable">
+<thead>
+<tr><th>Kategoria</th><th>Wybrany podzespół</th><th>Cena (zł)</th></tr>
+</thead>
+<tbody id="priceBody"></tbody>
+<tfoot>
+<tr><td colspan="2" style="text-align:right;">Suma:</td><td id="totalPrice">0 zł</td></tr>
+</tfoot>
+</table>
+</section>
+
+<section id="serwis">
+<h2>Serwis</h2>
+<form onsubmit="sendService(event)">
+<label>Imię i nazwisko</label>
+<input type="text" id="serwisImie" required>
+
+<label>Email</label>
+<input type="email" id="serwisEmail" required>
+
+<label>Telefon</label>
+<input type="tel" id="serwisTelefon" required>
+
+<label>Opis problemu</label>
+<textarea id="problem" required></textarea>
+
+<button type="submit">Wyślij zgłoszenie</button>
+</form>
+<p>Dostawa i odbiór komputera jest osobisty.</p>
 </section>
 
 <section id="kontakt">
 <h2>Kontakt</h2>
-<form id="contact-form">
-<label>Imię i nazwisko:<input type="text" name="name" required></label>
-<label>Numer telefonu:<input type="text" name="phone" required></label>
-<label>Adres email:<input type="email" name="email" required></label>
-<label>Co chcesz zamówić:<textarea name="message" required></textarea></label>
-<button type="submit">Wyślij</button>
-</form>
+<p>Patryk Nicki</p>
+<p>Email: subarupapi03@gmail.com</p>
+<p>Telefon: 535540576</p>
 </section>
 
-<section id="serwis" style="background-color:#001f3f; color:#fff;">
-<h2>Serwis</h2>
-<form id="service-form">
-<label>Imię i nazwisko:<input type="text" name="name" required></label>
-<label>Numer telefonu:<input type="text" name="phone" required></label>
-<label>Adres email:<input type="email" name="email" required></label>
-<label>Opis problemu:<textarea name="problem" required></textarea></label>
-<button type="submit">Wyślij</button>
-</form>
-<p>Dostawa komputera i jego odbiór jest osobisty.</p>
-</section>
-
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-// Zainicjalizuj EmailJS
-emailjs.init("cYT-_FzYFV23XSUV-");
-
-function showSection(id){
-    document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
-}
-
-// Obliczanie ceny
-function calculatePrice(){
-    let total = 0;
-    let summary = "Wybrane podzespoły:\n";
-    
-    const addSelection = (el, name)=> {
-        const price = parseInt(el.selectedOptions ? el.selectedOptions[0].dataset.price : el.dataset.price);
-        total += price;
-        summary += name + ": " + (el.selectedOptions ? el.selectedOptions[0].value : el.value) + " - " + price + " zł\n";
-    };
-
-    addSelection(document.getElementById('cpu'), "CPU");
-    addSelection(document.getElementById('gpu'), "GPU");
-    addSelection(document.getElementById('mb'), "Płyta główna");
-    addSelection(document.getElementById('psu'), "Zasilacz");
-    addSelection(document.getElementById('case'), "Obudowa");
-    addSelection(document.getElementById('cooling'), "Chłodzenie CPU");
-
-    // RAM
-    document.querySelectorAll('.ram').forEach((el,i)=>{
-        if(el.checked){
-            let qty = parseInt(document.querySelectorAll('.ram-qty')[i].value);
-            let price = parseInt(el.dataset.price)*qty;
-            total += price;
-            summary += "RAM: "+el.value+" x"+qty+" - "+price+" zł\n";
-        }
-    });
-    // SSD
-    document.querySelectorAll('.ssd').forEach((el,i)=>{
-        if(el.checked){
-            let qty = parseInt(document.querySelectorAll('.ssd-qty')[i].value);
-            let price = parseInt(el.dataset.price)*qty;
-            total += price;
-            summary += "SSD: "+el.value+" x"+qty+" - "+price+" zł\n";
-        }
-    });
-    // HDD
-    document.querySelectorAll('.hdd').forEach((el,i)=>{
-        if(el.checked){
-            let qty = parseInt(document.querySelectorAll('.hdd-qty')[i].value);
-            let price = parseInt(el.dataset.price)*qty;
-            total += price;
-            summary += "HDD: "+el.value+" x"+qty+" - "+price+" zł\n";
-        }
-    });
-    // Wentylatory
-    document.querySelectorAll('.fan').forEach((el,i)=>{
-        if(el.checked){
-            let qty = parseInt(document.querySelectorAll('.fan-qty')[i].value);
-            let price = parseInt(el.dataset.price)*qty;
-            let rgb = document.querySelectorAll('.fan-rgb')[i].checked ? " RGB" : "";
-            total += price;
-            summary += "Wentylator: "+el.value+" x"+qty+rgb+" - "+price+" zł\n";
-        }
-    });
-
-    summary += "Łącznie: "+total+" zł";
-    document.getElementById('summary').innerText = summary;
-}
-
-// Formularz kontaktowy
-document.getElementById('contact-form').addEventListener('submit', function(e){
-    e.preventDefault();
-    emailjs.sendForm('service_j52aq3o','template_ff0tc6j',this)
-    .then(()=>{ alert("Wiadomość wysłana!"); this.reset(); })
-    .catch(()=>{ alert("Błąd wysyłki!"); });
-});
-
-// Formularz serwisowy
-document.getElementById('service-form').addEventListener('submit', function(e){
-    e.preventDefault();
-    emailjs.sendForm('service_j52aq3o','template_0fssvdn',this)
-    .then(()=>{ alert("Zgłoszenie wysłane!"); this.reset(); })
-    .catch(()=>{ alert("Błąd wysyłki!"); });
-});
-</script>
 </body>
 </html>
